@@ -1,0 +1,53 @@
+start_manual_watering:
+  name: Start Manual Watering
+  description: Start manual watering for a specific zone.
+  target:
+    entity:
+      domain: switch
+      integration: solem_irrigation
+  fields:
+    duration:
+      name: Duration
+      description: Duration in minutes for manual watering.
+      default: 10
+      example: 15
+      selector:
+        number:
+          min: 1
+          max: 120
+          unit_of_measurement: "min"
+
+stop_watering:
+  name: Stop Watering
+  description: Stop all watering on a module.
+  target:
+    entity:
+      domain: switch
+      integration: solem_irrigation
+
+test_all_valves:
+  name: Test All Valves
+  description: Test all valves on a module sequentially.
+  target:
+    entity:
+      domain: switch
+      integration: solem_irrigation
+  fields:
+    duration:
+      name: Duration
+      description: Duration in minutes for each valve test.
+      default: 2
+      example: 3
+      selector:
+        number:
+          min: 1
+          max: 10
+          unit_of_measurement: "min"
+
+start_program:
+  name: Start Program
+  description: Start a specific irrigation program.
+  target:
+    entity:
+      domain: switch
+      integration: solem_irrigation

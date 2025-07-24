@@ -1,0 +1,64 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Set up Solem Irrigation",
+        "description": "Enter your Solem account credentials",
+        "data": {
+          "username": "Username",
+          "password": "Password"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Re-authenticate with Solem",
+        "description": "Your credentials need to be updated. Please enter your username and password.",
+        "data": {
+          "username": "Username",
+          "password": "Password"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Invalid username or password",
+      "cannot_connect": "Unable to connect to Solem servers",
+      "unknown": "An unexpected error occurred"
+    },
+    "abort": {
+      "already_configured": "This account is already configured",
+      "reauth_successful": "Re-authentication successful",
+      "reauth_failed": "Re-authentication failed"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Solem Irrigation Options",
+        "description": "Configure polling intervals and default settings",
+        "data": {
+          "scan_interval": "Normal scan interval (seconds)",
+          "fast_scan_interval": "Fast scan interval when watering (seconds)",
+          "full_refresh_interval": "Full refresh interval (seconds)",
+          "manual_duration": "Default manual watering duration (minutes)"
+        }
+      }
+    }
+  },
+  "services": {
+    "start_manual_watering": {
+      "name": "Start manual watering",
+      "description": "Start manual watering for a specific zone"
+    },
+    "stop_watering": {
+      "name": "Stop watering",
+      "description": "Stop all watering on a module"
+    },
+    "test_all_valves": {
+      "name": "Test all valves",
+      "description": "Test all valves on a module sequentially"
+    },
+    "start_program": {
+      "name": "Start program",
+      "description": "Start a specific irrigation program"
+    }
+  }
+}
