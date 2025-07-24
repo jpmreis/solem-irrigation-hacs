@@ -6,10 +6,12 @@ from typing import Dict, Optional
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_USERNAME, CONF_PASSWORD
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers.event import async_call_later
 from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
+from .const import DOMAIN
 from .solem_api import SolemAPI, AuthenticationError
 
 _LOGGER = logging.getLogger(__name__)
@@ -156,15 +158,17 @@ class SolemTokenManager:
 
     def schedule_refresh_check(self) -> None:
         """Schedule periodic token validity checks."""
-        if self._refresh_task and not self._refresh_task.done():
-            self._refresh_task.cancel()
+        if self._refresh_task:
+            self._refresh_task()  # Cancel existing task
+            self._refresh_task = None
         
         # Calculate next check time
         next_check_delay = self._get_next_check_delay()
         
         _LOGGER.debug("Scheduling next token check in %d seconds", next_check_delay)
         
-        self._refresh_task = self.hass.async_call_later(
+        self._refresh_task = async_call_later(
+            self.hass,
             next_check_delay,
             self._periodic_refresh_check
         )
@@ -187,19 +191,20 @@ class SolemTokenManager:
             # No expiry info, check in 30 minutes
             return 1800
 
-    async def _periodic_refresh_check(self, now=None) -> None:
+    @callback
+    def _periodic_refresh_check(self, now=None) -> None:
         """Periodic check called by Home Assistant scheduler."""
         _LOGGER.debug("Performing periodic token check")
         try:
             # Get the coordinator to trigger a refresh if tokens need updating
             # This will call ensure_valid_tokens during the next update
-            domain_data = self.hass.data.get("solem_irrigation", {})
+            domain_data = self.hass.data.get(DOMAIN, {})
             for entry_data in domain_data.values():
                 if isinstance(entry_data, dict) and "coordinator" in entry_data:
                     coordinator = entry_data["coordinator"]
                     if coordinator.token_manager is self:
                         # Request refresh which will trigger token check
-                        await coordinator.async_request_refresh()
+                        self.hass.async_create_task(coordinator.async_request_refresh())
                         break
                         
         except Exception as e:
@@ -210,8 +215,9 @@ class SolemTokenManager:
 
     def cancel_refresh_task(self) -> None:
         """Cancel the refresh task."""
-        if self._refresh_task and not self._refresh_task.done():
-            self._refresh_task.cancel()
+        if self._refresh_task:
+            self._refresh_task()  # Call the cancel function returned by async_call_later
+            self._refresh_task = None
             _LOGGER.debug("Cancelled token refresh task")
 
     async def clear_tokens(self) -> None:

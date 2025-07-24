@@ -113,13 +113,13 @@ class SolemModuleOnlineSensor(SolemBaseBinarySensor):
         return "Online"
 
     @property
-    def entity_id(self) -> str:
-        """Return entity ID."""
+    def suggested_object_id(self) -> str:
+        """Return suggested object ID."""
         module = self.module
         if module:
             module_name = slugify(module.name.lower())
-            return f"binary_sensor.irrigation_{module_name}_online"
-        return f"binary_sensor.irrigation_module_{self._module_id}_online"
+            return f"irrigation_{module_name}_online"
+        return f"irrigation_module_{self._module_id}_online"
 
     @property
     def is_on(self) -> bool:
@@ -169,13 +169,13 @@ class SolemModuleWateringSensor(SolemBaseBinarySensor):
         return "Watering"
 
     @property
-    def entity_id(self) -> str:
-        """Return entity ID."""
+    def suggested_object_id(self) -> str:
+        """Return suggested object ID."""
         module = self.module
         if module:
             module_name = slugify(module.name.lower())
-            return f"binary_sensor.irrigation_{module_name}_watering"
-        return f"binary_sensor.irrigation_module_{self._module_id}_watering"
+            return f"irrigation_{module_name}_watering"
+        return f"irrigation_module_{self._module_id}_watering"
 
     @property
     def is_on(self) -> bool:
@@ -228,13 +228,13 @@ class SolemModuleBatteryLowSensor(SolemBaseBinarySensor):
         return "Battery Low"
 
     @property
-    def entity_id(self) -> str:
-        """Return entity ID."""
+    def suggested_object_id(self) -> str:
+        """Return suggested object ID."""
         module = self.module
         if module:
             module_name = slugify(module.name.lower())
-            return f"binary_sensor.irrigation_{module_name}_battery_low"
-        return f"binary_sensor.irrigation_module_{self._module_id}_battery_low"
+            return f"irrigation_{module_name}_battery_low"
+        return f"irrigation_module_{self._module_id}_battery_low"
 
     @property
     def is_on(self) -> bool:
@@ -289,13 +289,13 @@ class SolemZoneWateringSensor(SolemBaseBinarySensor):
         return f"Zone {self._zone_index + 1} Watering"
 
     @property
-    def entity_id(self) -> str:
-        """Return entity ID."""
+    def suggested_object_id(self) -> str:
+        """Return suggested object ID."""
         module = self.module
         if module:
             module_name = slugify(module.name.lower())
-            return f"binary_sensor.irrigation_{module_name}_zone_{self._zone_index + 1}_watering"
-        return f"binary_sensor.irrigation_module_{self._module_id}_zone_{self._zone_index + 1}_watering"
+            return f"irrigation_{module_name}_zone_{self._zone_index + 1}_watering"
+        return f"irrigation_module_{self._module_id}_zone_{self._zone_index + 1}_watering"
 
     @property
     def zone(self):
@@ -359,13 +359,13 @@ class SolemZoneSensorFaultSensor(SolemBaseBinarySensor):
         return f"Zone {self._zone_index + 1} Sensor Fault"
 
     @property
-    def entity_id(self) -> str:
-        """Return entity ID."""
+    def suggested_object_id(self) -> str:
+        """Return suggested object ID."""
         module = self.module
         if module:
             module_name = slugify(module.name.lower())
-            return f"binary_sensor.irrigation_{module_name}_zone_{self._zone_index + 1}_sensor_fault"
-        return f"binary_sensor.irrigation_module_{self._module_id}_zone_{self._zone_index + 1}_sensor_fault"
+            return f"irrigation_{module_name}_zone_{self._zone_index + 1}_sensor_fault"
+        return f"irrigation_module_{self._module_id}_zone_{self._zone_index + 1}_sensor_fault"
 
     @property
     def zone(self):
@@ -437,13 +437,13 @@ class SolemProgramActiveSensor(SolemBaseBinarySensor):
         return f"Program {self._program_index} Active"
 
     @property
-    def entity_id(self) -> str:
-        """Return entity ID."""
+    def suggested_object_id(self) -> str:
+        """Return suggested object ID."""
         module = self.module
         if module:
             module_name = slugify(module.name.lower())
-            return f"binary_sensor.irrigation_{module_name}_program_{self._program_index}_active"
-        return f"binary_sensor.irrigation_module_{self._module_id}_program_{self._program_index}_active"
+            return f"irrigation_{module_name}_program_{self._program_index}_active"
+        return f"irrigation_module_{self._module_id}_program_{self._program_index}_active"
 
     @property
     def program(self):
@@ -509,13 +509,13 @@ class SolemProgramRunningSensor(SolemBaseBinarySensor):
         return f"Program {self._program_index} Running"
 
     @property
-    def entity_id(self) -> str:
-        """Return entity ID."""
+    def suggested_object_id(self) -> str:
+        """Return suggested object ID."""
         module = self.module
         if module:
             module_name = slugify(module.name.lower())
-            return f"binary_sensor.irrigation_{module_name}_program_{self._program_index}_running"
-        return f"binary_sensor.irrigation_module_{self._module_id}_program_{self._program_index}_running"
+            return f"irrigation_{module_name}_program_{self._program_index}_running"
+        return f"irrigation_module_{self._module_id}_program_{self._program_index}_running"
 
     @property
     def program(self):

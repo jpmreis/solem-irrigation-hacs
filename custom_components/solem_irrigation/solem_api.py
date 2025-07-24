@@ -278,7 +278,7 @@ class SolemAPI:
             # Handle various ISO formats
             if date_string.endswith('Z'):
                 date_string = date_string[:-1] + '+00:00'
-            return datetime.fromisoformat(date_string.replace('Z', '+00:00'))
+            return datetime.fromisoformat(date_string)
         except (ValueError, AttributeError):
             _LOGGER.warning(f"Could not parse datetime: {date_string}")
             return None

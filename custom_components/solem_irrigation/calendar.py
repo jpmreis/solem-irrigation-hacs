@@ -236,13 +236,13 @@ class SolemModuleCalendar(SolemBaseCalendar):
         return "Schedule"
 
     @property
-    def entity_id(self) -> str:
-        """Return entity ID."""
+    def suggested_object_id(self) -> str:
+        """Return suggested object ID."""
         module = self.module
         if module:
             module_name = slugify(module.name.lower())
-            return f"calendar.irrigation_{module_name}_schedule"
-        return f"calendar.irrigation_module_{self._module_id}_schedule"
+            return f"irrigation_{module_name}_schedule"
+        return f"irrigation_module_{self._module_id}_schedule"
 
     @property
     def module(self):
@@ -328,9 +328,9 @@ class SolemSystemCalendar(SolemBaseCalendar):
         return "Irrigation System Schedule"
 
     @property
-    def entity_id(self) -> str:
-        """Return entity ID."""
-        return "calendar.irrigation_system_schedule"
+    def suggested_object_id(self) -> str:
+        """Return suggested object ID."""
+        return "irrigation_system_schedule"
 
     def _get_modules_for_calendar(self) -> List:
         """Get modules that should be included in this calendar."""

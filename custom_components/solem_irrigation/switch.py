@@ -124,13 +124,13 @@ class SolemModuleSwitch(SolemBaseSwitch):
         return "Module"
 
     @property
-    def entity_id(self) -> str:
-        """Return entity ID."""
+    def suggested_object_id(self) -> str:
+        """Return suggested object ID."""
         module = self.module
         if module:
             module_name = slugify(module.name.lower())
-            return f"switch.irrigation_{module_name}"
-        return f"switch.irrigation_module_{self._module_id}"
+            return f"irrigation_{module_name}"
+        return f"irrigation_module_{self._module_id}"
 
     @property
     def is_on(self) -> bool:
@@ -215,13 +215,13 @@ class SolemZoneSwitch(SolemBaseSwitch):
         return f"Zone {self._zone_index + 1}"
 
     @property
-    def entity_id(self) -> str:
-        """Return entity ID."""
+    def suggested_object_id(self) -> str:
+        """Return suggested object ID."""
         module = self.module
         if module:
             module_name = slugify(module.name.lower())
-            return f"switch.irrigation_{module_name}_zone_{self._zone_index + 1}"
-        return f"switch.irrigation_module_{self._module_id}_zone_{self._zone_index + 1}"
+            return f"irrigation_{module_name}_zone_{self._zone_index + 1}"
+        return f"irrigation_module_{self._module_id}_zone_{self._zone_index + 1}"
 
     @property
     def zone(self):
@@ -321,13 +321,13 @@ class SolemProgramSwitch(SolemBaseSwitch):
         return f"Program {self._program_index}"
 
     @property
-    def entity_id(self) -> str:
-        """Return entity ID."""
+    def suggested_object_id(self) -> str:
+        """Return suggested object ID."""
         module = self.module
         if module:
             module_name = slugify(module.name.lower())
-            return f"switch.irrigation_{module_name}_program_{self._program_index}"
-        return f"switch.irrigation_module_{self._module_id}_program_{self._program_index}"
+            return f"irrigation_{module_name}_program_{self._program_index}"
+        return f"irrigation_module_{self._module_id}_program_{self._program_index}"
 
     @property
     def program(self):
@@ -358,7 +358,7 @@ class SolemProgramSwitch(SolemBaseSwitch):
         """Return the icon."""
         program = self.program
         if program and program.is_active:
-            return ICON_PROGRAM if self.is_on else ICON_PROGRAM
+            return ICON_PROGRAM if self.is_on else ICON_PROGRAM_OFF
         return ICON_PROGRAM_OFF
 
     @property

@@ -137,13 +137,13 @@ class SolemModuleStatusSensor(SolemBaseSensor):
         return "Status"
 
     @property
-    def entity_id(self) -> str:
-        """Return entity ID."""
+    def suggested_object_id(self) -> str:
+        """Return suggested object ID."""
         module = self.module
         if module:
             module_name = slugify(module.name.lower())
-            return f"sensor.irrigation_{module_name}_status"
-        return f"sensor.irrigation_module_{self._module_id}_status"
+            return f"irrigation_{module_name}_status"
+        return f"irrigation_module_{self._module_id}_status"
 
     @property
     def native_value(self) -> str:
@@ -205,13 +205,13 @@ class SolemModuleTimeRemainingSensor(SolemBaseSensor):
         return "Time Remaining"
 
     @property
-    def entity_id(self) -> str:
-        """Return entity ID."""
+    def suggested_object_id(self) -> str:
+        """Return suggested object ID."""
         module = self.module
         if module:
             module_name = slugify(module.name.lower())
-            return f"sensor.irrigation_{module_name}_time_remaining"
-        return f"sensor.irrigation_module_{self._module_id}_time_remaining"
+            return f"irrigation_{module_name}_time_remaining"
+        return f"irrigation_module_{self._module_id}_time_remaining"
 
     @property
     def native_value(self) -> Optional[int]:
@@ -278,13 +278,13 @@ class SolemModuleBatterySensor(SolemBaseSensor):
         return "Battery"
 
     @property
-    def entity_id(self) -> str:
-        """Return entity ID."""
+    def suggested_object_id(self) -> str:
+        """Return suggested object ID."""
         module = self.module
         if module:
             module_name = slugify(module.name.lower())
-            return f"sensor.irrigation_{module_name}_battery"
-        return f"sensor.irrigation_module_{self._module_id}_battery"
+            return f"irrigation_{module_name}_battery"
+        return f"irrigation_module_{self._module_id}_battery"
 
     @property
     def native_value(self) -> Optional[int]:
@@ -355,13 +355,13 @@ class SolemModuleNextRunSensor(SolemBaseSensor):
         return "Next Run"
 
     @property
-    def entity_id(self) -> str:
-        """Return entity ID."""
+    def suggested_object_id(self) -> str:
+        """Return suggested object ID."""
         module = self.module
         if module:
             module_name = slugify(module.name.lower())
-            return f"sensor.irrigation_{module_name}_next_run"
-        return f"sensor.irrigation_module_{self._module_id}_next_run"
+            return f"irrigation_{module_name}_next_run"
+        return f"irrigation_module_{self._module_id}_next_run"
 
     @property
     def native_value(self) -> Optional[datetime]:
@@ -411,13 +411,13 @@ class SolemModuleSignalQualitySensor(SolemBaseSensor):
         return "Signal Quality"
 
     @property
-    def entity_id(self) -> str:
-        """Return entity ID."""
+    def suggested_object_id(self) -> str:
+        """Return suggested object ID."""
         module = self.module
         if module:
             module_name = slugify(module.name.lower())
-            return f"sensor.irrigation_{module_name}_signal_quality"
-        return f"sensor.irrigation_module_{self._module_id}_signal_quality"
+            return f"irrigation_{module_name}_signal_quality"
+        return f"irrigation_module_{self._module_id}_signal_quality"
 
     @property
     def native_value(self) -> Optional[int]:
@@ -471,13 +471,13 @@ class SolemModuleLastCommunicationSensor(SolemBaseSensor):
         return "Last Communication"
 
     @property
-    def entity_id(self) -> str:
-        """Return entity ID."""
+    def suggested_object_id(self) -> str:
+        """Return suggested object ID."""
         module = self.module
         if module:
             module_name = slugify(module.name.lower())
-            return f"sensor.irrigation_{module_name}_last_communication"
-        return f"sensor.irrigation_module_{self._module_id}_last_communication"
+            return f"irrigation_{module_name}_last_communication"
+        return f"irrigation_module_{self._module_id}_last_communication"
 
     @property
     def native_value(self) -> Optional[datetime]:
@@ -520,13 +520,13 @@ class SolemZoneStatusSensor(SolemBaseSensor):
         return f"Zone {self._zone_index + 1} Status"
 
     @property
-    def entity_id(self) -> str:
-        """Return entity ID."""
+    def suggested_object_id(self) -> str:
+        """Return suggested object ID."""
         module = self.module
         if module:
             module_name = slugify(module.name.lower())
-            return f"sensor.irrigation_{module_name}_zone_{self._zone_index + 1}_status"
-        return f"sensor.irrigation_module_{self._module_id}_zone_{self._zone_index + 1}_status"
+            return f"irrigation_{module_name}_zone_{self._zone_index + 1}_status"
+        return f"irrigation_module_{self._module_id}_zone_{self._zone_index + 1}_status"
 
     @property
     def zone(self):
@@ -598,13 +598,13 @@ class SolemProgramNextRunSensor(SolemBaseSensor):
         return f"Program {self._program_index} Next Run"
 
     @property
-    def entity_id(self) -> str:
-        """Return entity ID."""
+    def suggested_object_id(self) -> str:
+        """Return suggested object ID."""
         module = self.module
         if module:
             module_name = slugify(module.name.lower())
-            return f"sensor.irrigation_{module_name}_program_{self._program_index}_next_run"
-        return f"sensor.irrigation_module_{self._module_id}_program_{self._program_index}_next_run"
+            return f"irrigation_{module_name}_program_{self._program_index}_next_run"
+        return f"irrigation_module_{self._module_id}_program_{self._program_index}_next_run"
 
     @property
     def program(self):
@@ -676,13 +676,13 @@ class SolemProgramScheduleSensor(SolemBaseSensor):
         return f"Program {self._program_index} Schedule"
 
     @property
-    def entity_id(self) -> str:
-        """Return entity ID."""
+    def suggested_object_id(self) -> str:
+        """Return suggested object ID."""
         module = self.module
         if module:
             module_name = slugify(module.name.lower())
-            return f"sensor.irrigation_{module_name}_program_{self._program_index}_schedule"
-        return f"sensor.irrigation_module_{self._module_id}_program_{self._program_index}_schedule"
+            return f"irrigation_{module_name}_program_{self._program_index}_schedule"
+        return f"irrigation_module_{self._module_id}_program_{self._program_index}_schedule"
 
     @property
     def program(self):

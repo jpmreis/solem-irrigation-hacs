@@ -14,7 +14,7 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ConfigEntryAuthFailed, HomeAssistantError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
-from homeassistant.util import dt as dt_util
+from homeassistant.util import dt as dt_util, slugify
 
 from .const import (
     DOMAIN,
@@ -388,7 +388,7 @@ async def _async_register_services(hass: HomeAssistant):
         # Find module by matching entity name pattern
         module_id = None
         for mid, module in coordinator.data["modules"].items():
-            module_name_normalized = module.name.lower().replace(" ", "_")
+            module_name_normalized = slugify(module.name.lower())
             if module_name_normalized in entity_id:
                 module_id = mid
                 break
@@ -415,7 +415,7 @@ async def _async_register_services(hass: HomeAssistant):
         # Find module
         module_id = None
         for mid, module in coordinator.data["modules"].items():
-            module_name_normalized = module.name.lower().replace(" ", "_")
+            module_name_normalized = slugify(module.name.lower())
             if module_name_normalized in entity_id:
                 module_id = mid
                 break
@@ -443,7 +443,7 @@ async def _async_register_services(hass: HomeAssistant):
         # Find module
         module_id = None
         for mid, module in coordinator.data["modules"].items():
-            module_name_normalized = module.name.lower().replace(" ", "_")
+            module_name_normalized = slugify(module.name.lower())
             if module_name_normalized in entity_id:
                 module_id = mid
                 break
@@ -477,7 +477,7 @@ async def _async_register_services(hass: HomeAssistant):
         # Find module
         module_id = None
         for mid, module in coordinator.data["modules"].items():
-            module_name_normalized = module.name.lower().replace(" ", "_")
+            module_name_normalized = slugify(module.name.lower())
             if module_name_normalized in entity_id:
                 module_id = mid
                 break
