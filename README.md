@@ -4,7 +4,7 @@
 [![GitHub Latest Release](https://img.shields.io/github/release/jpmreis/solem-irrigation-hacs.svg)](https://github.com/jpmreis/solem-irrigation-hacs/releases/latest)
 [![GitHub All Releases](https://img.shields.io/github/downloads/jpmreis/solem-irrigation-hacs/total.svg)](https://github.com/jpmreis/solem-irrigation-hacs/releases)
 
-A comprehensive Home Assistant custom component for controlling and monitoring Solem irrigation systems.
+A comprehensive Home Assistant custom component for controlling and monitoring Solem irrigation systems that have a WIFI CONNECTED CONTROLLER.
 
 ## Features
 
