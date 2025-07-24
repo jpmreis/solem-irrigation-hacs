@@ -13,6 +13,8 @@ import json
 import logging
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any, Union
+
+from homeassistant.util import dt as dt_util
 from dataclasses import dataclass
 from enum import Enum
 
@@ -92,7 +94,7 @@ class WateringProgram:
         if not self.is_active or not any(t >= 0 for t in self.start_times):
             return
         
-        now = datetime.now()
+        now = dt_util.now()
         active_start_times = [t for t in self.start_times if t >= 0]
         
         # Find next occurrence
@@ -271,14 +273,20 @@ class SolemAPI:
         }
     
     def _parse_datetime(self, date_string: Optional[str]) -> Optional[datetime]:
-        """Parse ISO datetime string to datetime object."""
+        """Parse ISO datetime string to timezone-aware datetime object."""
         if not date_string:
             return None
         try:
             # Handle various ISO formats
             if date_string.endswith('Z'):
                 date_string = date_string[:-1] + '+00:00'
-            return datetime.fromisoformat(date_string)
+            dt = datetime.fromisoformat(date_string)
+            
+            # If datetime is naive (no timezone), assume it's in the system timezone
+            if dt.tzinfo is None:
+                dt = dt_util.as_system_local_timezone(dt)
+            
+            return dt
         except (ValueError, AttributeError):
             _LOGGER.warning(f"Could not parse datetime: {date_string}")
             return None
