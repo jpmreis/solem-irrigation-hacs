@@ -121,7 +121,10 @@ class SolemModuleSwitch(SolemBaseSwitch):
     @property
     def name(self) -> str:
         """Return the name."""
-        return "Module"
+        module = self.module
+        if module:
+            return module.name
+        return f"Module {self._module_id}"
 
     @property
     def suggested_object_id(self) -> str:

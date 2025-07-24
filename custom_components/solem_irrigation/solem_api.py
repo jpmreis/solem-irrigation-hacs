@@ -91,7 +91,12 @@ class WateringProgram:
     
     def _calculate_next_run_time(self):
         """Calculate the next scheduled run time for this program."""
-        if not self.is_active or not any(t >= 0 for t in self.start_times):
+        if not self.is_active:
+            _LOGGER.debug(f"Program {self.index} ({self.name}) is inactive, skipping next run calculation")
+            return
+            
+        if not any(t >= 0 for t in self.start_times):
+            _LOGGER.debug(f"Program {self.index} ({self.name}) has no valid start times: {self.start_times}")
             return
         
         now = dt_util.now()
@@ -123,6 +128,11 @@ class WateringProgram:
                 
                 if self.next_run_time is None or scheduled_time < self.next_run_time:
                     self.next_run_time = scheduled_time
+                    
+        if self.next_run_time:
+            _LOGGER.debug(f"Program {self.index} ({self.name}) next run: {self.next_run_time}")
+        else:
+            _LOGGER.debug(f"Program {self.index} ({self.name}) has no upcoming scheduled runs (week_days: {self.week_days})")
     
     def get_schedule_description(self) -> str:
         """Get a human-readable schedule description."""
@@ -218,7 +228,15 @@ class WateringModule:
     def next_scheduled_watering(self) -> Optional[datetime]:
         """Get the next scheduled watering time across all programs."""
         next_times = [p.next_run_time for p in self.programs if p.next_run_time is not None]
-        return min(next_times) if next_times else None
+        result = min(next_times) if next_times else None
+        
+        if result:
+            _LOGGER.debug(f"Module {self.name} next scheduled watering: {result}")
+        else:
+            active_programs = [p for p in self.programs if p.is_active]
+            _LOGGER.debug(f"Module {self.name} has no scheduled waterings. Active programs: {len(active_programs)}/{len(self.programs)}")
+            
+        return result
 
 class SolemAPI:
     """Main API client for Solem irrigation systems."""

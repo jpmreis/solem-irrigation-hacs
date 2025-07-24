@@ -370,6 +370,12 @@ class SolemModuleNextRunSensor(SolemBaseSensor):
         if module:
             return module.next_scheduled_watering
         return None
+        
+    @property
+    def available(self) -> bool:
+        """Return if entity is available."""
+        # Entity is available if module exists, regardless of whether it has scheduled runs
+        return self.module is not None
 
     @property
     def device_class(self) -> SensorDeviceClass:
