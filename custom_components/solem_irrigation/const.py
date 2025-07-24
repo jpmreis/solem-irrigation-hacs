@@ -19,6 +19,7 @@ SERVICE_START_MANUAL_WATERING = "start_manual_watering"
 SERVICE_STOP_WATERING = "stop_watering"
 SERVICE_TEST_ALL_VALVES = "test_all_valves"
 SERVICE_START_PROGRAM = "start_program"
+SERVICE_REFRESH_DATA = "refresh_data"
 
 # Entity attributes
 ATTR_MODULE_ID = "module_id"

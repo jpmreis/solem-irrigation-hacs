@@ -29,6 +29,7 @@ from .const import (
     SERVICE_STOP_WATERING,
     SERVICE_TEST_ALL_VALVES,
     SERVICE_START_PROGRAM,
+    SERVICE_REFRESH_DATA,
 )
 from .solem_api import SolemAPI, AuthenticationError, APIError, ZoneNotAvailableError
 from .token_manager import SolemTokenManager
@@ -60,6 +61,8 @@ TEST_ALL_VALVES_SCHEMA = vol.Schema({
 START_PROGRAM_SCHEMA = vol.Schema({
     vol.Required("entity_id"): cv.entity_id,
 })
+
+REFRESH_DATA_SCHEMA = vol.Schema({})
 
 
 class SolemDataUpdateCoordinator(DataUpdateCoordinator):
@@ -487,6 +490,16 @@ async def _async_register_services(hass: HomeAssistant):
         
         await coordinator.async_start_program(module_id, program_index)
 
+    async def async_refresh_data(call: ServiceCall):
+        """Service to refresh all data from the API."""
+        # Find all coordinators and refresh them
+        for entry_data in hass.data[DOMAIN].values():
+            if "coordinator" in entry_data:
+                coordinator = entry_data["coordinator"]
+                # Force a full refresh
+                coordinator.last_full_refresh = None
+                await coordinator.async_refresh()
+
     # Register services
     hass.services.async_register(
         DOMAIN,
@@ -514,6 +527,13 @@ async def _async_register_services(hass: HomeAssistant):
         SERVICE_START_PROGRAM,
         async_start_program,
         schema=START_PROGRAM_SCHEMA,
+    )
+    
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_REFRESH_DATA,
+        async_refresh_data,
+        schema=REFRESH_DATA_SCHEMA,
     )
 
 
