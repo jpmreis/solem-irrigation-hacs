@@ -31,11 +31,7 @@ async def async_setup_entry(
     
     entities: List[CalendarEntity] = []
     
-    # Create calendar entities for each module
-    for module_id, module in coordinator.data["modules"].items():
-        entities.append(SolemModuleCalendar(coordinator, module_id))
-    
-    # Create system-wide calendar
+    # Create only system-wide calendar
     entities.append(SolemSystemCalendar(coordinator))
     
     async_add_entities(entities)
@@ -140,8 +136,8 @@ class SolemBaseCalendar(CoordinatorEntity, CalendarEntity):
                 )
                 event_start = dt_util.as_local(event_start)
                 
-                # Calculate end time
-                event_end = event_start + timedelta(minutes=program.estimated_duration)
+                # Calculate end time (estimated_duration is in seconds)
+                event_end = event_start + timedelta(seconds=program.estimated_duration)
                 
                 # Skip if event is completely outside our range
                 if event_end < start_date or event_start > end_date:
@@ -171,7 +167,7 @@ class SolemBaseCalendar(CoordinatorEntity, CalendarEntity):
         lines = [
             f"Module: {module.name}",
             f"Program: {program.name} (Program {program.index})",
-            f"Estimated Duration: {program.estimated_duration} minutes",
+            f"Estimated Duration: {program.estimated_duration // 60} min {program.estimated_duration % 60} sec",
             f"Water Budget: {program.water_budget}%",
         ]
         
@@ -180,7 +176,7 @@ class SolemBaseCalendar(CoordinatorEntity, CalendarEntity):
             lines.append("Zones:")
             for idx, duration in enumerate(program.stations_duration):
                 if duration > 0 and idx < len(module.zones):
-                    lines.append(f"  • {module.zones[idx].name}: {duration} min")
+                    lines.append(f"  • {module.zones[idx].name}: {duration // 60} min {duration % 60} sec")
         
         return "\n".join(lines)
 
@@ -302,10 +298,10 @@ class SolemModuleCalendar(SolemBaseCalendar):
                 days_per_week = bin(program.week_days).count('1')
                 # Count how many start times per day
                 start_times_per_day = len([t for t in program.start_times if t >= 0])
-                # Calculate total weekly minutes
+                # Calculate total weekly seconds
                 weekly_runtime += program.estimated_duration * days_per_week * start_times_per_day
         
-        attrs["total_weekly_runtime"] = f"{weekly_runtime / 60:.1f} hours"
+        attrs["total_weekly_runtime"] = f"{weekly_runtime / 3600:.1f} hours"
         
         return attrs
 
