@@ -13,6 +13,7 @@ from homeassistant.const import Platform, CONF_USERNAME, CONF_PASSWORD, CONF_SCA
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ConfigEntryAuthFailed, HomeAssistantError
 from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util, slugify
 
@@ -87,7 +88,11 @@ class SolemDataUpdateCoordinator(DataUpdateCoordinator):
         # Polling management
         self.fast_poll_modules = set()
         self.last_full_refresh = None
+        self.last_successful_update = None
         self.consecutive_failures = 0
+        # module_id -> (started_at, estimated_end) for active watering
+        self.watering_windows = {}
+        self._last_raw_remaining = {}
         
         # Configuration
         self.fast_interval = config_entry.options.get(CONF_FAST_SCAN_INTERVAL, DEFAULT_FAST_SCAN_INTERVAL)
@@ -116,10 +121,13 @@ class SolemDataUpdateCoordinator(DataUpdateCoordinator):
             
             # Reset failure counter on success
             self.consecutive_failures = 0
+            self.last_successful_update = dt_util.utcnow()
             
             # Adjust polling interval based on watering status
             self._adjust_polling_interval()
-            
+
+            self._update_watering_windows(data)
+
             return data
             
         except AuthenticationError as e:
@@ -215,6 +223,49 @@ class SolemDataUpdateCoordinator(DataUpdateCoordinator):
         
         return self.data
 
+    @staticmethod
+    def _parse_remaining(time_str):
+        """Parse the cloud's MM:SS remaining string into a timedelta."""
+        try:
+            minutes, seconds = time_str.split(":")
+            delta = timedelta(minutes=int(minutes), seconds=int(seconds))
+            return delta if delta.total_seconds() > 0 else None
+        except (AttributeError, ValueError):
+            return None
+
+    def _update_watering_windows(self, data):
+        """Maintain start/end estimates for active watering runs.
+
+        The cloud's remaining-time field only changes when the module uplinks
+        over LoRa, so the end estimate is refreshed only when that raw value
+        changes (= fresh information), never recomputed from a stale reading.
+        """
+        now = dt_util.utcnow()
+        modules = (data or {}).get("modules", {})
+        for module_id, module in modules.items():
+            status = module.status
+            if not (status and status.is_running):
+                self.watering_windows.pop(module_id, None)
+                self._last_raw_remaining.pop(module_id, None)
+                continue
+
+            remaining = self._parse_remaining(status.time_remaining)
+            window = self.watering_windows.get(module_id)
+            raw_changed = status.time_remaining != self._last_raw_remaining.get(module_id)
+
+            if window is None:
+                self.watering_windows[module_id] = (
+                    now, now + remaining if remaining else None)
+            elif remaining and raw_changed:
+                new_end = now + remaining
+                start, end = window
+                # Keep exact ends (e.g. HA-initiated runs) unless the fresh
+                # cloud reading disagrees by more than 2 minutes
+                if end is None or abs((new_end - end).total_seconds()) > 120:
+                    self.watering_windows[module_id] = (start, new_end)
+
+            self._last_raw_remaining[module_id] = status.time_remaining
+
     def _adjust_polling_interval(self):
         """Adjust polling interval based on current watering status."""
         if self.fast_poll_modules:
@@ -238,6 +289,10 @@ class SolemDataUpdateCoordinator(DataUpdateCoordinator):
             if success:
                 # Add to fast polling and trigger immediate update
                 self.fast_poll_modules.add(module_id)
+                # Exact window: we know start and duration for HA-initiated runs
+                now = dt_util.utcnow()
+                self.watering_windows[module_id] = (
+                    now, now + timedelta(minutes=duration))
                 await self.async_request_refresh()
                 
             return success
@@ -364,7 +419,35 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 async def _async_register_services(hass: HomeAssistant):
     """Register integration services."""
-    
+
+    def _resolve_module(coordinator, entity_id: str):
+        """Resolve (module_id, sub_index) for an entity.
+
+        Primary path is the entity registry unique_id, which embeds the module
+        id directly (<module_id>_module / _zone_<n> / _program_<n>) and is
+        immune to module renames. Falls back to legacy module-name substring
+        matching for entities not in the registry.
+        """
+        registry = er.async_get(hass)
+        entry = registry.async_get(entity_id)
+        if entry and entry.platform == DOMAIN:
+            uid = entry.unique_id
+            for sep in ("_zone_", "_program_"):
+                if sep in uid:
+                    mid, _, idx = uid.partition(sep)
+                    if mid in coordinator.data["modules"] and idx.isdigit():
+                        return mid, int(idx)
+            mid = uid[: -len("_module")] if uid.endswith("_module") else uid
+            if mid in coordinator.data["modules"]:
+                return mid, None
+
+        # Legacy fallback: match current module name slug inside the entity_id
+        for mid, module in coordinator.data["modules"].items():
+            if slugify(module.name.lower()) in entity_id:
+                return mid, None
+
+        return None, None
+
     async def async_start_manual_watering(call: ServiceCall):
         """Service to start manual watering."""
         entity_id = call.data["entity_id"]
@@ -380,25 +463,17 @@ async def _async_register_services(hass: HomeAssistant):
         if not coordinator:
             raise HomeAssistantError("No Solem coordinator found")
         
-        # Parse entity_id to get module and zone info
-        # Format: switch.irrigation_[module_name]_zone_[N]
-        parts = entity_id.split("_")
-        if len(parts) < 4 or not parts[-1].isdigit():
-            raise HomeAssistantError("Invalid entity_id format")
-        
-        zone_index = int(parts[-1]) - 1  # Convert to 0-based
-        
-        # Find module by matching entity name pattern
-        module_id = None
-        for mid, module in coordinator.data["modules"].items():
-            module_name_normalized = slugify(module.name.lower())
-            if module_name_normalized in entity_id:
-                module_id = mid
-                break
-        
+        module_id, zone_index = _resolve_module(coordinator, entity_id)
         if not module_id:
             raise HomeAssistantError("Could not find module for entity")
-        
+
+        if zone_index is None:
+            # Fallback resolution has no zone info; parse it from the entity_id
+            parts = entity_id.split("_")
+            if len(parts) < 4 or not parts[-1].isdigit():
+                raise HomeAssistantError("Invalid entity_id format")
+            zone_index = int(parts[-1]) - 1  # Convert to 0-based
+
         await coordinator.async_start_manual_watering(module_id, zone_index, duration)
 
     async def async_stop_watering(call: ServiceCall):
@@ -415,17 +490,10 @@ async def _async_register_services(hass: HomeAssistant):
         if not coordinator:
             raise HomeAssistantError("No Solem coordinator found")
         
-        # Find module
-        module_id = None
-        for mid, module in coordinator.data["modules"].items():
-            module_name_normalized = slugify(module.name.lower())
-            if module_name_normalized in entity_id:
-                module_id = mid
-                break
-        
+        module_id, _ = _resolve_module(coordinator, entity_id)
         if not module_id:
             raise HomeAssistantError("Could not find module for entity")
-        
+
         await coordinator.async_stop_watering(module_id)
 
     async def async_test_all_valves(call: ServiceCall):
@@ -443,17 +511,10 @@ async def _async_register_services(hass: HomeAssistant):
         if not coordinator:
             raise HomeAssistantError("No Solem coordinator found")
         
-        # Find module
-        module_id = None
-        for mid, module in coordinator.data["modules"].items():
-            module_name_normalized = slugify(module.name.lower())
-            if module_name_normalized in entity_id:
-                module_id = mid
-                break
-        
+        module_id, _ = _resolve_module(coordinator, entity_id)
         if not module_id:
             raise HomeAssistantError("Could not find module for entity")
-        
+
         await coordinator.async_test_all_valves(module_id, duration)
 
     async def async_start_program(call: ServiceCall):
@@ -470,24 +531,17 @@ async def _async_register_services(hass: HomeAssistant):
         if not coordinator:
             raise HomeAssistantError("No Solem coordinator found")
         
-        # Parse program entity_id: switch.irrigation_[module_name]_program_[N]
-        parts = entity_id.split("_")
-        if len(parts) < 4 or not parts[-1].isdigit():
-            raise HomeAssistantError("Invalid program entity_id format")
-        
-        program_index = int(parts[-1])
-        
-        # Find module
-        module_id = None
-        for mid, module in coordinator.data["modules"].items():
-            module_name_normalized = slugify(module.name.lower())
-            if module_name_normalized in entity_id:
-                module_id = mid
-                break
-        
+        module_id, program_index = _resolve_module(coordinator, entity_id)
         if not module_id:
             raise HomeAssistantError("Could not find module for entity")
-        
+
+        if program_index is None:
+            # Fallback resolution has no program info; parse it from the entity_id
+            parts = entity_id.split("_")
+            if len(parts) < 4 or not parts[-1].isdigit():
+                raise HomeAssistantError("Invalid program entity_id format")
+            program_index = int(parts[-1])
+
         await coordinator.async_start_program(module_id, program_index)
 
     async def async_refresh_data(call: ServiceCall):

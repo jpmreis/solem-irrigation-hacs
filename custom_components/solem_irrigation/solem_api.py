@@ -507,10 +507,11 @@ class SolemAPI:
             time_remaining = status_data.get("time", "00:00")
             state = status_data.get("state", 1)
             
-            # Consider it running if we have active program/station and time remaining
+            # Running = active station with time remaining. Manual valve runs
+            # report runningProgram=0 and state=1, so neither can be required.
             is_running = (
                 state == 2 or  # Original state check
-                (running_program > 0 and running_station > 0 and time_remaining != "00:00")
+                (running_station > 0 and time_remaining != "00:00")
             )
             
             status = WateringStatus(
@@ -624,10 +625,11 @@ class SolemAPI:
                 time_remaining = status_data.get("time", "00:00")
                 state = status_data.get("state", 1)
                 
-                # Consider it running if we have active program/station and time remaining
+                # Running = active station with time remaining. Manual valve runs
+                # report runningProgram=0 and state=1, so neither can be required.
                 is_running = (
                     state == 2 or  # Original state check
-                    (running_program > 0 and running_station > 0 and time_remaining != "00:00")
+                    (running_station > 0 and time_remaining != "00:00")
                 )
                 
                 status = WateringStatus(
