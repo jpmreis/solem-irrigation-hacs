@@ -15,6 +15,7 @@ from homeassistant.helpers.entity import DeviceInfo, EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import slugify
+from homeassistant.util import dt as dt_util
 
 from .const import (
     DOMAIN,
@@ -61,6 +62,7 @@ async def async_setup_entry(
         entities.extend([
             SolemModuleStatusSensor(coordinator, module_id),
             SolemModuleTimeRemainingSensor(coordinator, module_id),
+            SolemModuleWateringWindowSensor(coordinator, module_id),
             SolemModuleBatterySensor(coordinator, module_id),
             SolemModuleNextRunSensor(coordinator, module_id),
         ])
@@ -83,6 +85,9 @@ async def async_setup_entry(
                 SolemProgramScheduleSensor(coordinator, module_id, program.index),
             ])
     
+    # Global coordinator health sensor
+    entities.append(SolemLastRefreshSensor(coordinator))
+
     async_add_entities(entities)
 
 
@@ -748,3 +753,79 @@ class SolemProgramScheduleSensor(SolemBaseSensor):
                 attrs["stations"] = stations
 
         return attrs
+
+class SolemLastRefreshSensor(CoordinatorEntity, SensorEntity):
+    """Timestamp of the last successful data refresh from the Solem cloud."""
+
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+    _attr_icon = "mdi:cloud-refresh"
+    _attr_name = "Irrigation Last Refresh"
+    _attr_has_entity_name = False
+
+    def __init__(self, coordinator):
+        """Initialize the sensor."""
+        super().__init__(coordinator)
+        self._attr_unique_id = f"{coordinator.config_entry.entry_id}_last_refresh"
+
+    @property
+    def suggested_object_id(self) -> str:
+        """Return suggested object ID."""
+        return "irrigation_last_refresh"
+
+    @property
+    def native_value(self):
+        """Return the timestamp of the last successful coordinator update."""
+        return self.coordinator.last_successful_update
+
+
+class SolemModuleWateringWindowSensor(SolemBaseSensor):
+    """Start-to-end window of the current watering run (e.g. "22:10 - 22:34")."""
+
+    _attr_icon = "mdi:clock-time-four-outline"
+
+    @property
+    def unique_id(self) -> str:
+        """Return unique ID."""
+        return f"{self._module_id}_watering_window"
+
+    @property
+    def name(self) -> str:
+        """Return the name."""
+        return "Watering Window"
+
+    @property
+    def suggested_object_id(self) -> str:
+        """Return suggested object ID."""
+        module = self.module
+        if module:
+            module_name = slugify(module.name.lower())
+            return f"irrigation_{module_name}_watering_window"
+        return f"irrigation_module_{self._module_id}_watering_window"
+
+    @property
+    def _window(self):
+        return self.coordinator.watering_windows.get(self._module_id)
+
+    @property
+    def native_value(self) -> Optional[str]:
+        """Return the window as local HH:MM - HH:MM."""
+        window = self._window
+        if not window:
+            return None
+        start, end = window
+        start_s = dt_util.as_local(start).strftime("%H:%M")
+        end_s = dt_util.as_local(end).strftime("%H:%M") if end else "?"
+        return f"{start_s} - {end_s}"
+
+    @property
+    def extra_state_attributes(self) -> Dict[str, Any]:
+        """Return start/end as machine-readable timestamps."""
+        window = self._window
+        if not window:
+            return {ATTR_MODULE_ID: self._module_id}
+        start, end = window
+        return {
+            ATTR_MODULE_ID: self._module_id,
+            "started_at": start.isoformat(),
+            "ends_at": end.isoformat() if end else None,
+        }
